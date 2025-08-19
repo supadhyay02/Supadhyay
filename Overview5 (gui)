@@ -1,0 +1,450 @@
+# adp_dashboard_gui.py
+import os
+import csv
+import sys
+import time
+import xlwings as xw
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+from PyQt5 import QtWidgets, QtCore
+
+# ----------------- Your original build_xlsm (kept intact, minimal adjustments to ensure module use) -----------------
+OUT_FILE = os.path.abspath("ADP_Interactive_Dashboard5.xlsm")
+
+def build_xlsm():
+    """
+    Create the ADP_Interactive_Dashboard4.xlsm file with layout, styling and ActiveX controls.
+    This function is the user's original generator (kept behaviorally intact).
+    """
+    if os.path.exists(OUT_FILE):
+        try:
+            os.remove(OUT_FILE)
+        except Exception:
+            pass
+
+    # --- CREATE BASE FILE WITH xlwings ---
+    app = xw.App(visible=False)
+    try:
+        wb = app.books.add()
+        sht = wb.sheets[0]
+        sht.name = "Overview"
+
+        # === HEADER BAR ===
+        header_color = (33, 150, 83)  # modern green
+        sht.range("C3:K4").merge()
+        sht.range("C3").value = "PTD/YTD Results\nUSA"
+        sht.range("C3").api.Font.Size = 16
+        sht.range("C3").api.Font.Bold = True
+        sht.range("C3").color = header_color
+        sht.range("C3").api.Font.Color = 16777215
+        sht.range("C3").api.HorizontalAlignment = -4108
+        sht.range("C3").api.VerticalAlignment = -4108
+        sht.range("C3").api.WrapText = True
+
+        sht.range("L3:M4").merge()
+        sht.range("L3").value = "Version 2.70"
+        sht.range("L3").api.Font.Size = 11
+        sht.range("L3").api.Font.Bold = True
+        sht.range("L3").color = header_color
+        sht.range("L3").api.Font.Color = 16777215
+        sht.range("L3").api.HorizontalAlignment = -4152
+        sht.range("L3").api.VerticalAlignment = -4108
+
+        # === LABELS ===
+        # Client Info
+        sht.range("C6:F6").merge(); sht.range("C6").value = "Client Info"
+        sht.range("C7").value = "Client Number:"
+        sht.range("C8").value = "Company Name:"
+        sht.range("C9").value = "Country:"
+        sht.range("C10").value = "Language:"
+
+        # Client Contact
+        sht.range("H6:K6").merge(); sht.range("H6").value = "Client Contact"
+        sht.range("H7").value = "Name:"
+        sht.range("H8").value = "Phone Number:"
+        sht.range("H9").value = "E-Mail:"
+        sht.range("H10").value = "ADP Contact:"
+
+        # Period
+        sht.range("C12:F12").merge(); sht.range("C12").value = "Period"
+        sht.range("C13").value = "Date Received:"
+        sht.range("C14").value = "Date Processed:"
+
+        # Transaction Overview
+        sht.range("H12:K12").merge(); sht.range("H12").value = "Transaction Overview"
+        sht.range("H13").value = "Record Type"
+        sht.range("I13").value = "Record Count"
+        sht.range("J13").value = "Total Records"
+
+        # === FORMATTING FIXES ===
+        sht.range("C:K").api.EntireColumn.AutoFit()
+        max_width = max([sht.range(f"{col}1").column_width for col in "CDEFGHIJK"])
+        for col in "CDEFGHIJK":
+            sht.range(f"{col}1").column_width = max_width + 3
+
+        # Whitespace rows
+        for r in range(6, 22):
+            sht.range(f"{r}:{r}").row_height = 24
+
+        wb.save(OUT_FILE)
+        wb.close()
+    finally:
+        app.quit()
+
+    # --- APPLY VISUAL STYLING WITH openpyxl ---
+    wb2 = load_workbook(OUT_FILE, keep_vba=True)
+    ws2 = wb2["Overview"]
+
+    thin = Side(style="thin", color="CCCCCC")   # light gray borders
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    # Section headers (soft background + bold dark font)
+    section_fill = PatternFill("solid", fgColor="E8F5E9")  # very light green
+    title_font = Font(bold=True, size=12, color="1B5E20")  # dark green
+
+    for rng in ["C6","H6","C12","H12"]:
+        ws2[rng].font = title_font
+        ws2[rng].fill = section_fill
+        ws2[rng].border = border
+        ws2[rng].alignment = Alignment(horizontal="center", vertical="center")
+
+    # Sub-labels
+    for rng in ["C7","C8","C9","C10","H7","H8","H9","H10","C13","C14"]:
+        ws2[rng].font = Font(bold=True, size=11, color="37474F")  # dark slate
+        ws2[rng].alignment = Alignment(horizontal="left", vertical="center")
+
+    # Transaction Overview table headers
+    table_header_fill = PatternFill("solid", fgColor="E3F2FD")
+    for rng in ["H13","I13","J13"]:
+        ws2[rng].font = Font(bold=True, size=11, color="0D47A1")
+        ws2[rng].fill = table_header_fill
+        ws2[rng].border = border
+        ws2[rng].alignment = Alignment(horizontal="center", vertical="center")
+
+    wb2.save(OUT_FILE)
+    wb2.close()
+
+    # --- ADD ACTIVEX CONTROLS (textboxes/checkbox/buttons) ---
+    app2 = xw.App(visible=False)
+    try:
+        book = app2.books.open(OUT_FILE)
+        sht = book.sheets["Overview"]
+
+        def cell_left_top(row, col):
+            rng = sht.api.Range(sht.api.Cells(row, col), sht.api.Cells(row, col))
+            return rng.Left, rng.Top
+
+        # Textboxes (these are identical placements to the earlier code)
+        textboxes = [
+            ("txtClientNumber", 7, 4, 200),
+            ("txtCompanyName", 8, 4, 200),
+            ("txtCountry", 9, 4, 150),
+            ("txtLanguage", 10, 4, 150),
+            ("txtContactName", 7, 9, 200),
+            ("txtContactPhone", 8, 9, 200),
+            ("txtContactEmail", 9, 9, 200),
+            ("txtContactADP", 10, 9, 200),
+            ("txtDateReceived", 13, 4, 150),
+            ("txtDateProcessed", 14, 4, 150),
+        ]
+        for name, r, c, w in textboxes:
+            left, top = cell_left_top(r, c)
+            tb = sht.api.OLEObjects().Add(
+                ClassType="Forms.TextBox.1", Link=False, DisplayAsIcon=False,
+                Left=left+2, Top=top+2, Width=w, Height=20
+            )
+            tb.Name = name
+
+        # Checkbox
+        left, top = cell_left_top(22, 3)
+        chk = sht.api.OLEObjects().Add(
+            ClassType="Forms.CheckBox.1", Link=False, DisplayAsIcon=False,
+            Left=left+2, Top=top+2, Width=220, Height=20
+        )
+        chk.Name = "chkTestRun"
+        chk.Object.Caption = "Test Run (No Update)"
+
+        # Buttons
+        left, top = cell_left_top(24, 3)
+
+        # Button 1 - Green
+        btn1 = sht.api.Shapes.AddShape(1, left, top, 160, 30)
+        tf1 = btn1.TextFrame
+        tf1.Characters().Text = "Create Upload File"
+        btn1.Fill.ForeColor.RGB = 0x2E7D32
+        try:
+            tf1.Characters().Font.Color = 16777215
+        except:
+            try:
+                btn1.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = 16777215
+            except:
+                pass
+        tf1.HorizontalAlignment = -4108
+        btn1.Line.Visible = False
+
+        # Button 2 - Blue
+        btn2 = sht.api.Shapes.AddShape(1, left + 180, top, 160, 30)
+        tf2 = btn2.TextFrame
+        tf2.Characters().Text = "Import Upload File"
+        btn2.Fill.ForeColor.RGB = 0x1565C0
+        try:
+            tf2.Characters().Font.Color = 16777215
+        except:
+            try:
+                btn2.TextFrame2.TextRange.Font.Fill.ForeColor.RGB = 16777215
+            except:
+                pass
+        tf2.HorizontalAlignment = -4108
+        btn2.Line.Visible = False
+
+        book.save(OUT_FILE)
+        book.close()
+    finally:
+        app2.quit()
+
+# ----------------- End of build_xlsm -----------------
+
+# ----------------- GUI: PyQt5 interactive front-end -----------------
+# Field <-> cell mapping: (row, col) used for writing values into sheet using xlwings
+# These coordinates are the same points where ActiveX controls are located (so written values line up visually).
+FIELD_CELL_MAP = {
+    "client_number": (7, 4),   # D7
+    "company_name": (8, 4),    # D8
+    "country": (9, 4),         # D9
+    "language": (10, 4),       # D10
+    "contact_name": (7, 9),    # I7
+    "contact_phone": (8, 9),   # I8
+    "contact_email": (9, 9),   # I9
+    "contact_adp": (10, 9),    # I10
+    "date_received": (13, 4),  # D13
+    "date_processed": (14, 4), # D14
+    "test_run": (22, 3),       # C22 (checkbox stored here True/False)
+}
+
+def write_fields_to_xlsm(values_dict):
+    """
+    Open the OUT_FILE and write the values into the mapped cells.
+    This writes to the worksheet cells (not ActiveX objects) so the values are visible and usable.
+    """
+    if not os.path.exists(OUT_FILE):
+        raise FileNotFoundError(f"{OUT_FILE} not found — generate the dashboard first (Generate Dashboard).")
+
+    app = xw.App(visible=False)
+    try:
+        wb = app.books.open(OUT_FILE)
+        sht = wb.sheets["Overview"]
+        for key, val in values_dict.items():
+            if key not in FIELD_CELL_MAP:
+                continue
+            r, c = FIELD_CELL_MAP[key]
+            sht.api.Cells(r, c).Value = val
+        wb.save()
+        wb.close()
+    finally:
+        app.quit()
+
+def create_upload_csv(values_dict, csv_path=None):
+    """
+    Create CSV file named upload_<ClientNumber>.csv in same folder as workbook unless csv_path provided.
+    """
+    client_num = values_dict.get("client_number", "").strip() or "unknown"
+    fname = csv_path if csv_path else os.path.join(os.path.dirname(OUT_FILE), f"upload_{client_num}.csv")
+    rows = [["ClientNumber", "CompanyName", "Country", "Language"],
+            [values_dict.get("client_number",""), values_dict.get("company_name",""),
+             values_dict.get("country",""), values_dict.get("language","")]]
+    with open(fname, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        for r in rows:
+            writer.writerow(r)
+    return fname
+
+def import_upload_csv(csv_path):
+    """
+    Read first data row from CSV and return a dict mapping to fields (client_number, company_name, country, language).
+    """
+    with open(csv_path, newline='', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+    if len(rows) < 2:
+        raise ValueError("CSV does not have a data row (header + data required).")
+    header = rows[0]
+    data = rows[1]
+    # map by header names we expect
+    out = {
+        "client_number": data[0] if len(data)>0 else "",
+        "company_name": data[1] if len(data)>1 else "",
+        "country": data[2] if len(data)>2 else "",
+        "language": data[3] if len(data)>3 else ""
+    }
+    return out
+
+class DashboardWindow(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("ADP Interactive Dashboard - GUI")
+        self.setGeometry(200, 200, 820, 520)
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QtWidgets.QVBoxLayout()
+
+        # Top row: Generate dashboard / Open XLSM
+        top_h = QtWidgets.QHBoxLayout()
+        self.btn_generate = QtWidgets.QPushButton("Generate Dashboard (.xlsm)")
+        self.btn_generate.clicked.connect(self.on_generate)
+        self.btn_open = QtWidgets.QPushButton("Open Dashboard in Excel")
+        self.btn_open.clicked.connect(self.on_open_in_excel)
+        top_h.addWidget(self.btn_generate)
+        top_h.addWidget(self.btn_open)
+        top_h.addStretch()
+        layout.addLayout(top_h)
+
+        # Form split into two columns
+        grid = QtWidgets.QGridLayout()
+        row = 0
+
+        # Left column fields (Client Info)
+        self.edits = {}
+        labels_left = [
+            ("Client Number", "client_number"),
+            ("Company Name", "company_name"),
+            ("Country", "country"),
+            ("Language", "language"),
+            ("Date Received", "date_received"),
+            ("Date Processed", "date_processed"),
+        ]
+        for i, (label, key) in enumerate(labels_left):
+            lbl = QtWidgets.QLabel(label + ":")
+            lbl.setFixedWidth(120)
+            edit = QtWidgets.QLineEdit()
+            grid.addWidget(lbl, i, 0)
+            grid.addWidget(edit, i, 1)
+            self.edits[key] = edit
+
+        # Right column fields (Client Contact)
+        labels_right = [
+            ("Name", "contact_name"),
+            ("Phone Number", "contact_phone"),
+            ("E-Mail", "contact_email"),
+            ("ADP Contact", "contact_adp"),
+        ]
+        for i, (label, key) in enumerate(labels_right):
+            lbl = QtWidgets.QLabel(label + ":")
+            lbl.setFixedWidth(120)
+            edit = QtWidgets.QLineEdit()
+            grid.addWidget(lbl, i, 2)
+            grid.addWidget(edit, i, 3)
+            self.edits[key] = edit
+
+        layout.addLayout(grid)
+
+        # Checkbox row
+        chk_h = QtWidgets.QHBoxLayout()
+        self.chk_test_run = QtWidgets.QCheckBox("Test Run (No Update)")
+        chk_h.addWidget(self.chk_test_run)
+        chk_h.addStretch()
+        layout.addLayout(chk_h)
+
+        # Action buttons row
+        actions_h = QtWidgets.QHBoxLayout()
+        self.btn_fill = QtWidgets.QPushButton("Fill Values into .xlsm")
+        self.btn_fill.clicked.connect(self.on_fill_into_xlsm)
+        self.btn_create_csv = QtWidgets.QPushButton("Create Upload CSV")
+        self.btn_create_csv.clicked.connect(self.on_create_csv)
+        self.btn_import_csv = QtWidgets.QPushButton("Import Upload CSV")
+        self.btn_import_csv.clicked.connect(self.on_import_csv)
+        actions_h.addWidget(self.btn_fill)
+        actions_h.addWidget(self.btn_create_csv)
+        actions_h.addWidget(self.btn_import_csv)
+        actions_h.addStretch()
+        layout.addLayout(actions_h)
+
+        # Status / log area
+        self.log = QtWidgets.QTextEdit()
+        self.log.setReadOnly(True)
+        self.log.setFixedHeight(140)
+        layout.addWidget(self.log)
+
+        self.setLayout(layout)
+
+    def log_msg(self, s):
+        ts = time.strftime("%H:%M:%S")
+        self.log.append(f"[{ts}] {s}")
+
+    def on_generate(self):
+        try:
+            self.log_msg("Generating dashboard .xlsm ...")
+            build_xlsm()
+            self.log_msg(f"Generated: {OUT_FILE}")
+        except Exception as e:
+            self.log_msg(f"Error generating dashboard: {e}")
+
+    def on_open_in_excel(self):
+        if not os.path.exists(OUT_FILE):
+            self.log_msg("Dashboard file not found. Generate first.")
+            return
+        try:
+            # Open visible so user can interact
+            app = xw.App(visible=True)
+            app.books.open(OUT_FILE)
+            # do not quit app here; leave visible
+            self.log_msg("Opened workbook in Excel (visible).")
+        except Exception as e:
+            self.log_msg(f"Error opening in Excel: {e}")
+
+    def gather_fields(self):
+        d = {}
+        for key, widget in self.edits.items():
+            d[key] = widget.text().strip()
+        d["test_run"] = self.chk_test_run.isChecked()
+        return d
+
+    def on_fill_into_xlsm(self):
+        vals = self.gather_fields()
+        try:
+            write_fields_to_xlsm(vals)
+            self.log_msg("Written form values into the .xlsm sheet cells.")
+        except FileNotFoundError:
+            self.log_msg("XLSM not found. Generating first then writing...")
+            try:
+                build_xlsm()
+                write_fields_to_xlsm(vals)
+                self.log_msg("Generated and written values to .xlsm.")
+            except Exception as e:
+                self.log_msg(f"Failed: {e}")
+        except Exception as e:
+            self.log_msg(f"Error writing values: {e}")
+
+    def on_create_csv(self):
+        vals = self.gather_fields()
+        try:
+            fname = create_upload_csv(vals)
+            self.log_msg(f"Created CSV: {fname}")
+        except Exception as e:
+            self.log_msg(f"Error creating CSV: {e}")
+
+    def on_import_csv(self):
+        # choose file dialog
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Import upload CSV", "", "CSV Files (*.csv);;All Files (*)")
+        if not path:
+            return
+        try:
+            mapping = import_upload_csv(path)
+            # populate GUI fields
+            for k in ["client_number", "company_name", "country", "language"]:
+                if k in mapping and k in self.edits:
+                    self.edits[k].setText(mapping[k])
+            self.log_msg(f"Imported CSV data from {path} into form fields.")
+        except Exception as e:
+            self.log_msg(f"Error importing CSV: {e}")
+
+# ----------------- Run app -----------------
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+    w = DashboardWindow()
+    w.show()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
