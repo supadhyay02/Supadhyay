@@ -1,0 +1,149 @@
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, colors
+from openpyxl.utils import get_column_letter
+from datetime import datetime
+
+def create_exact_dashboard(output_file="sideboard_dashboard.xlsx"):
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Dashboard"
+    
+    # Remove gridlines for cleaner look
+    ws.sheet_view.showGridLines = False
+    
+    # ========== HEADER SECTION ==========
+    ws['A1'] = "# Sideboard"
+    ws['A1'].font = Font(size=18, bold=True, color="000000")
+    ws.row_dimensions[1].height = 30
+    
+    # ========== GLOBALVIEW SECTION ==========
+    ws['A3'] = "## GlobalView."
+    ws['A3'].font = Font(size=14, bold=True, color="000000")
+    ws.row_dimensions[3].height = 25
+    
+    # ========== CLIENT INFO SECTION ==========
+    ws['A5'] = "### Client Info"
+    ws['A5'].font = Font(size=12, bold=True, color="000000")
+    
+    client_info_data = [
+        ["Client Number", "CL-12345"],
+        ["Company Name", "Acme Corp"],
+        ["Country", "USA English"]
+    ]
+    
+    for i, (label, value) in enumerate(client_info_data, start=6):
+        ws[f'A{i}'] = f"- {label}"
+        ws[f'B{i}'] = value
+        ws[f'A{i}'].font = Font(size=11)
+        ws[f'B{i}'].font = Font(size=11)
+        ws.row_dimensions[i].height = 20
+    
+    # ========== CLIENT CONTACT SECTION ==========
+    ws['D5'] = "### Client Contact"
+    ws['D5'].font = Font(size=12, bold=True, color="000000")
+    
+    client_contact_data = [
+        ["Name", "John Smith"],
+        ["Phone Number", "(555) 123-4567"],
+        ["E-Mail", "john.smith@acme.com"],
+        ["ADP Contact", "ADP Rep Name"]
+    ]
+    
+    for i, (label, value) in enumerate(client_contact_data, start=6):
+        ws[f'D{i}'] = f"- {label}"
+        ws[f'E{i}'] = value
+        ws[f'D{i}'].font = Font(size=11)
+        ws[f'E{i}'].font = Font(size=11)
+    
+    # ========== DIVIDER LINE ==========
+    for col in range(1, 7):
+        ws.cell(row=10, column=col).fill = PatternFill("solid", fgColor="DDDDDD")
+    ws.row_dimensions[10].height = 5
+    
+    # ========== OVERVIEW SECTION ==========
+    ws['A12'] = "### Overview"
+    ws['A12'].font = Font(size=12, bold=True, color="000000")
+    
+    ws['A14'] = "T558B&T558C Reference +"
+    ws['A14'].font = Font(size=11)
+    
+    # ========== PTD/YTD RESULTS ==========
+    ws['A16'] = "PTD/YTD Results"
+    ws['A16'].font = Font(size=11, bold=True)
+    ws['B16'] = "Version 2.70"
+    ws['B16'].font = Font(size=11)
+    ws['D16'] = "USA"
+    ws['D16'].font = Font(size=11)
+    
+    # ========== PERIOD SECTION ==========
+    ws['A18'] = "### Period"
+    ws['A18'].font = Font(size=12, bold=True, color="000000")
+    
+    period_data = [
+        ["Date Received", datetime.now().strftime("%Y-%m-%d")],
+        ["Date Processed", datetime.now().strftime("%Y-%m-%d")]
+    ]
+    
+    for i, (label, value) in enumerate(period_data, start=19):
+        ws[f'A{i}'] = f"- {label}"
+        ws[f'B{i}'] = value
+        ws[f'A{i}'].font = Font(size=11)
+        ws[f'B{i}'].font = Font(size=11)
+    
+    # ========== TRANSACTION OVERVIEW ==========
+    ws['D18'] = "### Transaction Overview"
+    ws['D18'].font = Font(size=12, bold=True, color="000000")
+    
+    # Create table
+    ws['D19'] = "Record Type"
+    ws['E19'] = "Record Count"
+    ws['D19'].font = Font(size=11, bold=True)
+    ws['E19'].font = Font(size=11, bold=True)
+    
+    transaction_data = [
+        ["T558B&T558C", 0]
+    ]
+    
+    for i, (record_type, count) in enumerate(transaction_data, start=20):
+        ws[f'D{i}'] = record_type
+        ws[f'E{i}'] = count
+        ws[f'D{i}'].font = Font(size=11)
+        ws[f'E{i}'].font = Font(size=11)
+    
+    # Total Records
+    ws['D22'] = "Total Records"
+    ws['E22'] = "0"
+    ws['D22'].font = Font(size=11, bold=True)
+    ws['E22'].font = Font(size=11, bold=True)
+    
+    # ========== FORMATTING ==========
+    # Set column widths
+    ws.column_dimensions['A'].width = 18
+    ws.column_dimensions['B'].width = 20
+    ws.column_dimensions['C'].width = 5  # Spacer
+    ws.column_dimensions['D'].width = 18
+    ws.column_dimensions['E'].width = 15
+    
+    # Add borders to key sections
+    def add_border(ws, cell_range):
+        border = Border(left=Side(style='thin'), 
+                       right=Side(style='thin'), 
+                       top=Side(style='thin'), 
+                       bottom=Side(style='thin'))
+        
+        for row in ws[cell_range]:
+            for cell in row:
+                cell.border = border
+    
+    add_border(ws, 'A5:B8')  # Client Info
+    add_border(ws, 'D5:E9')  # Client Contact
+    add_border(ws, 'D19:E22')  # Transaction Overview
+    
+    # Save the workbook
+    wb.save(output_file)
+    print(f"Dashboard created exactly as per image: {output_file}")
+
+# Execute the function
+create_exact_dashboard()
