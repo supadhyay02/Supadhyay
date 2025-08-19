@@ -1,0 +1,172 @@
+import os
+import xlwings as xw
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from datetime import datetime
+
+OUT_FILE = os.path.abspath("ADP_GlobalView_Dashboard.xlsm")
+
+def build_exact_dashboard():
+    if os.path.exists(OUT_FILE):
+        os.remove(OUT_FILE)
+
+    # --- CREATE BASE FILE WITH xlwings ---
+    app = xw.App(visible=False)
+    try:
+        wb = app.books.add()
+        sht = wb.sheets[0]
+        sht.name = "GlobalView"
+        
+        # === GLOBALVIEW HEADER ===
+        sht.range("A1").value = "# GlobalView."
+        sht.range("A1").api.Font.Size = 16
+        sht.range("A1").api.Font.Bold = True
+        sht.range("A1").api.Font.Color = 0x000000
+        
+        # === CLIENT INFO SECTION ===
+        sht.range("A3").value = "## Client Info"
+        sht.range("A3").api.Font.Size = 14
+        sht.range("A3").api.Font.Bold = True
+        sht.range("A3").api.Font.Color = 0x000000
+        
+        client_info = [
+            ("- Client Number", "B3", ""),
+            ("- Company Name", "B4", ""),
+            ("- Country", "B5", "USA English")
+        ]
+        
+        for label, label_cell, value in client_info:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Size = 11
+            if value:
+                sht.range(label_cell.replace("B", "C")).value = value
+                sht.range(label_cell.replace("B", "C")).api.Font.Size = 11
+        
+        # === CLIENT CONTACT SECTION ===
+        sht.range("A7").value = "## Client Contact"
+        sht.range("A7").api.Font.Size = 14
+        sht.range("A7").api.Font.Bold = True
+        sht.range("A7").api.Font.Color = 0x000000
+        
+        client_contact = [
+            ("- Name", "B7", ""),
+            ("- Phone Number", "B8", ""),
+            ("- E-Mail", "B9", ""),
+            ("- ADP Contact", "B10", "")
+        ]
+        
+        for label, label_cell, value in client_contact:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Size = 11
+            if value:
+                sht.range(label_cell.replace("B", "C")).value = value
+                sht.range(label_cell.replace("B", "C")).api.Font.Size = 11
+        
+        # === OVERVIEW SECTION ===
+        sht.range("A12").value = "## Overview"
+        sht.range("A12").api.Font.Size = 14
+        sht.range("A12").api.Font.Bold = True
+        sht.range("A12").api.Font.Color = 0x000000
+        
+        sht.range("A13").value = "T558B&T558C Reference"
+        sht.range("A13").api.Font.Size = 11
+        
+        # Divider line
+        sht.range("A14:G14").color = (221, 221, 221)  # Light gray
+        
+        # === PTD/YTD RESULTS ===
+        sht.range("A16").value = "# PTD/YTD Results"
+        sht.range("A16").api.Font.Size = 16
+        sht.range("A16").api.Font.Bold = True
+        sht.range("A16").api.Font.Color = 0x000000
+        
+        sht.range("B17").value = "USA"
+        sht.range("B17").api.Font.Size = 11
+        
+        # === PERIOD SECTION ===
+        sht.range("A19").value = "## Period"
+        sht.range("A19").api.Font.Size = 14
+        sht.range("A19").api.Font.Bold = True
+        sht.range("A19").api.Font.Color = 0x000000
+        
+        period_info = [
+            ("- Date Received", "B19", ""),
+            ("- Date Processed", "B20", "")
+        ]
+        
+        for label, label_cell, value in period_info:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Size = 11
+            if value:
+                sht.range(label_cell.replace("B", "C")).value = value
+                sht.range(label_cell.replace("B", "C")).api.Font.Size = 11
+        
+        # Divider line
+        sht.range("A21:G21").color = (221, 221, 221)  # Light gray
+        
+        # === TRANSACTION OVERVIEW ===
+        sht.range("A23").value = "## Transaction Overview"
+        sht.range("A23").api.Font.Size = 14
+        sht.range("A23").api.Font.Bold = True
+        sht.range("A23").api.Font.Color = 0x000000
+        
+        # Table headers
+        sht.range("A24").value = "Record Type"
+        sht.range("B24").value = "Record Count"
+        sht.range("A24").api.Font.Bold = True
+        sht.range("B24").api.Font.Bold = True
+        
+        # Table data
+        sht.range("A25").value = "T558B&T558C"
+        sht.range("B25").value = 0
+        
+        # Total Records
+        sht.range("A27").value = "Total Records - 0"
+        sht.range("A27").api.Font.Bold = True
+        
+        # Adjust column widths
+        sht.range("A:A").column_width = 20
+        sht.range("B:B").column_width = 15
+        sht.range("C:G").column_width = 5  # Spacer columns
+        
+        wb.save(OUT_FILE)
+        wb.close()
+    finally:
+        app.quit()
+
+    # --- ENHANCE WITH OPENPYXL ---
+    wb2 = load_workbook(OUT_FILE, keep_vba=True)
+    ws = wb2["GlobalView"]
+    
+    # Add borders to key sections
+    thin_border = Border(left=Side(style='thin'), 
+                        right=Side(style='thin'), 
+                        top=Side(style='thin'), 
+                        bottom=Side(style='thin'))
+    
+    # Client Info section
+    for row in range(3, 6):
+        ws[f'A{row}'].border = thin_border
+        if ws[f'C{row}'].value:
+            ws[f'C{row}'].border = thin_border
+    
+    # Client Contact section
+    for row in range(7, 11):
+        ws[f'A{row}'].border = thin_border
+    
+    # Period section
+    for row in range(19, 21):
+        ws[f'A{row}'].border = thin_border
+    
+    # Transaction Overview table
+    for row in range(24, 26):
+        ws[f'A{row}'].border = thin_border
+        ws[f'B{row}'].border = thin_border
+    
+    wb2.save(OUT_FILE)
+    wb2.close()
+
+    print(f"✅ Exact replica dashboard created at: {OUT_FILE}")
+
+if __name__ == "__main__":
+    build_exact_dashboard()
