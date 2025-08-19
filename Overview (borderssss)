@@ -1,0 +1,53 @@
+from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
+
+def build_xlsm(ws2, OUT_FILE, wb2):
+    # === Border styles ===
+    thin_side = Side(style="thin", color="000000")
+    thick_side = Side(style="thick", color="000000")
+    thin = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
+
+    # === Fills ===
+    blue_fill = PatternFill("solid", fgColor="2F5496")
+    gray_fill = PatternFill("solid", fgColor="D9D9D9")
+    light_fill = PatternFill("solid", fgColor="F2F2F2")
+
+    # === STEP 1: Thin border on entire sheet ===
+    max_row = ws2.max_row
+    max_col = ws2.max_column
+    for r in range(1, max_row + 1):
+        for c in range(1, max_col + 1):
+            ws2.cell(row=r, column=c).border = thin
+
+    # === Title Bar ===
+    ws2.merge_cells("B2:G3")
+    title = ws2["B2"]
+    title.value = "ADP GlobalView Dashboard"
+    title.font = Font(size=20, bold=True, color="FFFFFF")
+    title.fill = blue_fill
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    # === Section Headers ===
+    for cell in ["B5", "E5", "B11", "E11"]:
+        ws2[cell].font = Font(bold=True)
+        ws2[cell].fill = gray_fill
+        ws2[cell].border = thin
+
+    # === Helper: Add thick outline around blocks ===
+    def add_thick_box(start_row, end_row, start_col, end_col):
+        for r in range(start_row, end_row + 1):
+            for c in range(start_col, end_col + 1):
+                cell = ws2.cell(row=r, column=c)
+                top    = thick_side if r == start_row else thin_side
+                bottom = thick_side if r == end_row else thin_side
+                left   = thick_side if c == start_col else thin_side
+                right  = thick_side if c == end_col else thin_side
+                cell.border = Border(top=top, bottom=bottom, left=left, right=right)
+
+    # === STEP 2: Highlight sections with thick borders ===
+    add_thick_box(5, 10, 2, 5)   # Client Information (B5:E10) → adjust if needed
+    add_thick_box(5, 10, 6, 8)   # Contact Details (F5:H10) → adjust if needed
+    add_thick_box(12, 15, 2, 7)  # Transaction Overview (B12:G15) → adjust if needed
+
+    # === Save and close ===
+    wb2.save(OUT_FILE)
+    wb2.close()
