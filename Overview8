@@ -1,0 +1,319 @@
+import os
+import xlwings as xw
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Color
+from datetime import datetime
+
+OUT_FILE = os.path.abspath("ADP_Professional_Dashboard.xlsm")
+
+def build_professional_dashboard():
+    if os.path.exists(OUT_FILE):
+        os.remove(OUT_FILE)
+
+    # --- CREATE BASE FILE WITH xlwings ---
+    app = xw.App(visible=False)
+    try:
+        wb = app.books.add()
+        sht = wb.sheets[0]
+        sht.name = "Dashboard"
+        
+        # === HEADER SECTION ===
+        header_color = (59, 89, 152)  # Professional blue
+        sht.range("B2:K3").merge()
+        sht.range("B2").value = "ADP GlobalView Dashboard"
+        sht.range("B2").api.Font.Size = 18
+        sht.range("B2").api.Font.Bold = True
+        sht.range("B2").color = header_color
+        sht.range("B2").api.Font.Color = 0xFFFFFF  # White text
+        sht.range("B2").api.HorizontalAlignment = -4108  # Center
+        sht.range("B2").api.VerticalAlignment = -4108  # Center
+        
+        # Version info
+        sht.range("L2:M3").merge()
+        sht.range("L2").value = f"v2.7\n{datetime.now().strftime('%Y-%m-%d')}"
+        sht.range("L2").api.Font.Size = 10
+        sht.range("L2").color = header_color
+        sht.range("L2").api.Font.Color = 0xFFFFFF
+        sht.range("L2").api.HorizontalAlignment = -4152  # Right align
+        
+        # === CLIENT INFO SECTION ===
+        # Client Info Box
+        sht.range("B5:F11").color = (234, 242, 255)  # Light blue background
+        sht.range("B5:F5").merge()
+        sht.range("B5").value = "Client Information"
+        sht.range("B5").api.Font.Size = 12
+        sht.range("B5").api.Font.Bold = True
+        sht.range("B5").api.Font.Color = 0x2F5496  # Dark blue
+        
+        # Client fields
+        client_fields = [
+            ("Client Number:", "B6", "C6:F6"),
+            ("Company Name:", "B7", "C7:F7"),
+            ("Country:", "B8", "C8:F8"),
+            ("Language:", "B9", "C9:F9"),
+            ("Client Status:", "B10", "C10:F10")
+        ]
+        
+        for label, label_cell, value_range in client_fields:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Bold = True
+            sht.range(value_range).merge()
+            sht.range(value_range.split(':')[0]).value = ""  # Empty value for user input
+        
+        # === CLIENT CONTACT SECTION ===
+        # Contact Info Box
+        sht.range("H5:L11").color = (234, 242, 255)  # Light blue background
+        sht.range("H5:L5").merge()
+        sht.range("H5").value = "Client Contact"
+        sht.range("H5").api.Font.Size = 12
+        sht.range("H5").api.Font.Bold = True
+        sht.range("H5").api.Font.Color = 0x2F5496  # Dark blue
+        
+        # Contact fields
+        contact_fields = [
+            ("Name:", "H6", "I6:L6"),
+            ("Phone:", "H7", "I7:L7"),
+            ("Email:", "H8", "I8:L8"),
+            ("ADP Contact:", "H9", "I9:L9"),
+            ("Last Contact:", "H10", "I10:L10")
+        ]
+        
+        for label, label_cell, value_range in contact_fields:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Bold = True
+            sht.range(value_range).merge()
+            sht.range(value_range.split(':')[0]).value = ""  # Empty value for user input
+        
+        # === TRANSACTION OVERVIEW ===
+        # Transaction Box
+        sht.range("H13:L20").color = (234, 242, 255)  # Light blue background
+        sht.range("H13:L13").merge()
+        sht.range("H13").value = "Transaction Overview"
+        sht.range("H13").api.Font.Size = 12
+        sht.range("H13").api.Font.Bold = True
+        sht.range("H13").api.Font.Color = 0x2F5496  # Dark blue
+        
+        # Table headers
+        sht.range("H14").value = "Record Type"
+        sht.range("I14").value = "Count"
+        sht.range("J14").value = "Status"
+        sht.range("K14").value = "Last Updated"
+        
+        # Format headers
+        for col in ["H", "I", "J", "K"]:
+            sht.range(f"{col}14").color = (197, 217, 241)  # Medium blue
+            sht.range(f"{col}14").api.Font.Bold = True
+            sht.range(f"{col}14").api.HorizontalAlignment = -4108  # Center
+        
+        # Sample data rows
+        record_types = ["T558B", "T558C", "T559A", "T560X"]
+        for i, rec_type in enumerate(record_types, start=15):
+            sht.range(f"H{i}").value = rec_type
+            sht.range(f"I{i}").value = 0
+            sht.range(f"J{i}").value = "Pending"
+            sht.range(f"K{i}").value = datetime.now().strftime("%Y-%m-%d")
+        
+        # === PERIOD SELECTION ===
+        sht.range("B13:F17").color = (234, 242, 255)  # Light blue background
+        sht.range("B13:F13").merge()
+        sht.range("B13").value = "Processing Period"
+        sht.range("B13").api.Font.Size = 12
+        sht.range("B13").api.Font.Bold = True
+        sht.range("B13").api.Font.Color = 0x2F5496  # Dark blue
+        
+        sht.range("B14").value = "Start Date:"
+        sht.range("B15").value = "End Date:"
+        sht.range("B16").value = "Processing Mode:"
+        
+        for cell in ["B14", "B15", "B16"]:
+            sht.range(cell).api.Font.Bold = True
+        
+        sht.range("C14:F14").merge()
+        sht.range("C15:F15").merge()
+        sht.range("C16:F16").merge()
+        
+        # === SUMMARY STATS ===
+        sht.range("B19:F23").color = (234, 242, 255)  # Light blue background
+        sht.range("B19:F19").merge()
+        sht.range("B19").value = "Summary Statistics"
+        sht.range("B19").api.Font.Size = 12
+        sht.range("B19").api.Font.Bold = True
+        sht.range("B19").api.Font.Color = 0x2F5496  # Dark blue
+        
+        stats = [
+            ("Total Records:", "B20", "C20:F20"),
+            ("Valid Records:", "B21", "C21:F21"),
+            ("Errors:", "B22", "C22:F22"),
+            ("Completion:", "B23", "C23:F23")
+        ]
+        
+        for label, label_cell, value_range in stats:
+            sht.range(label_cell).value = label
+            sht.range(label_cell).api.Font.Bold = True
+            sht.range(value_range).merge()
+            sht.range(value_range.split(':')[0]).value = 0  # Initialize with zeros
+        
+        # === BUTTONS ===
+        # Process Button
+        sht.range("B25:D26").merge()
+        btn_process = sht.range("B25")
+        btn_process.value = "PROCESS DATA"
+        btn_process.color = (84, 130, 53)  # Green
+        btn_process.api.Font.Color = 0xFFFFFF
+        btn_process.api.Font.Bold = True
+        btn_process.api.Font.Size = 12
+        btn_process.api.HorizontalAlignment = -4108
+        btn_process.api.VerticalAlignment = -4108
+        
+        # Export Button
+        sht.range("F25:H26").merge()
+        btn_export = sht.range("F25")
+        btn_export.value = "EXPORT REPORT"
+        btn_export.color = (68, 114, 196)  # Blue
+        btn_export.api.Font.Color = 0xFFFFFF
+        btn_export.api.Font.Bold = True
+        btn_export.api.Font.Size = 12
+        btn_export.api.HorizontalAlignment = -4108
+        btn_export.api.VerticalAlignment = -4108
+        
+        # Settings Button
+        sht.range("J25:L26").merge()
+        btn_settings = sht.range("J25")
+        btn_settings.value = "SETTINGS"
+        btn_settings.color = (112, 111, 211)  # Purple
+        btn_settings.api.Font.Color = 0xFFFFFF
+        btn_settings.api.Font.Bold = True
+        btn_settings.api.Font.Size = 12
+        btn_settings.api.HorizontalAlignment = -4108
+        btn_settings.api.VerticalAlignment = -4108
+        
+        # Adjust column widths
+        for col in ["B", "C", "D", "E", "F", "H", "I", "J", "K", "L"]:
+            sht.range(f"{col}:{col}").column_width = 12
+        
+        sht.range("G:G").column_width = 2  # Spacer column
+        
+        wb.save(OUT_FILE)
+        wb.close()
+    finally:
+        app.quit()
+
+    # --- ENHANCE WITH OPENPYXL ---
+    wb2 = load_workbook(OUT_FILE, keep_vba=True)
+    ws = wb2["Dashboard"]
+    
+    # Add borders to all sections
+    thin_border = Border(left=Side(style='thin'), 
+                        right=Side(style='thin'), 
+                        top=Side(style='thin'), 
+                        bottom=Side(style='thin'))
+    
+    sections = [
+        "B5:F11",  # Client Info
+        "H5:L11",  # Client Contact
+        "B13:F17",  # Period Selection
+        "B19:F23",  # Summary Stats
+        "H14:K18"   # Transaction Table
+    ]
+    
+    for section in sections:
+        for row in ws[section]:
+            for cell in row:
+                cell.border = thin_border
+    
+    # Format the transaction table headers
+    header_fill = PatternFill(start_color="2F5496", end_color="2F5496", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    for cell in ws["H14:K14"]:
+        cell[0].fill = header_fill
+        cell[0].font = header_font
+        cell[0].alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Format buttons
+    for btn_cell in ["B25", "F25", "J25"]:
+        ws[btn_cell].font = Font(color="FFFFFF", bold=True, size=12)
+        ws[btn_cell].alignment = Alignment(horizontal="center", vertical="center")
+    
+    wb2.save(OUT_FILE)
+    wb2.close()
+
+    # --- ADD INTERACTIVE CONTROLS ---
+    app2 = xw.App(visible=False)
+    try:
+        book = app2.books.open(OUT_FILE)
+        sht = book.sheets["Dashboard"]
+        
+        # Add dropdown for Processing Mode
+        sht.range("C16").value = "Standard"  # Default value
+        sht.range("C16").api.Validation.Add(
+            Type=3,  # xlValidateList
+            AlertStyle=1,  # xlValidAlertStop
+            Operator=1,  # xlBetween
+            Formula1='"Standard,Express,Test"'
+        )
+        
+        # Add data validation for dates
+        sht.range("C14").number_format = "yyyy-mm-dd"
+        sht.range("C15").number_format = "yyyy-mm-dd"
+        
+        # Add VBA module for button functionality
+        vba_code = """
+        Sub Process_Data()
+            MsgBox "Data processing initiated!", vbInformation
+            ' Add your processing code here
+        End Sub
+        
+        Sub Export_Report()
+            MsgBox "Report export initiated!", vbInformation
+            ' Add your export code here
+        End Sub
+        
+        Sub Open_Settings()
+            MsgBox "Settings dialog opened!", vbInformation
+            ' Add your settings code here
+        End Sub
+        """
+        
+        book.api.VBProject.VBComponents.Add(1).CodeModule.AddFromString(vba_code)
+        
+        # Assign macros to buttons
+        sht.range("B25").api.Hyperlinks.Add(
+            Anchor=sht.range("B25").api,
+            Address="",
+            SubAddress="",
+            ScreenTip="Process the current data",
+            TextToDisplay="PROCESS DATA"
+        )
+        sht.range("B25").api.Hyperlinks(1).SubAddress = "'Dashboard'!B25"
+        sht.range("B25").api.Hyperlinks(1).OnAction = "Process_Data"
+        
+        sht.range("F25").api.Hyperlinks.Add(
+            Anchor=sht.range("F25").api,
+            Address="",
+            SubAddress="",
+            ScreenTip="Export report to PDF",
+            TextToDisplay="EXPORT REPORT"
+        )
+        sht.range("F25").api.Hyperlinks(1).SubAddress = "'Dashboard'!F25"
+        sht.range("F25").api.Hyperlinks(1).OnAction = "Export_Report"
+        
+        sht.range("J25").api.Hyperlinks.Add(
+            Anchor=sht.range("J25").api,
+            Address="",
+            SubAddress="",
+            ScreenTip="Open settings dialog",
+            TextToDisplay="SETTINGS"
+        )
+        sht.range("J25").api.Hyperlinks(1).SubAddress = "'Dashboard'!J25"
+        sht.range("J25").api.Hyperlinks(1).OnAction = "Open_Settings"
+        
+        book.save(OUT_FILE)
+        book.close()
+    finally:
+        app2.quit()
+
+    print(f"✅ Professional interactive dashboard created at: {OUT_FILE}")
+
+if __name__ == "__main__":
+    build_professional_dashboard()
