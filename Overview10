@@ -1,0 +1,163 @@
+import pygame
+import sys
+from datetime import datetime
+
+# Initialize pygame
+pygame.init()
+
+# Screen dimensions
+WIDTH, HEIGHT = 900, 700
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("GlobalView Dashboard")
+
+# Colors
+BACKGROUND = (240, 240, 240)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+DARK_BLUE = (0, 51, 102)
+LIGHT_BLUE = (173, 216, 230)
+GRAY = (200, 200, 200)
+DARK_GRAY = (100, 100, 100)
+RED = (220, 0, 0)
+GREEN = (0, 150, 0)
+
+# Fonts
+title_font = pygame.font.SysFont("Arial", 28, bold=True)
+heading_font = pygame.font.SysFont("Arial", 20, bold=True)
+normal_font = pygame.font.SysFont("Arial", 16)
+small_font = pygame.font.SysFont("Arial", 14)
+
+# Sample data
+client_info = {
+    "client_number": "CL-2023-001",
+    "company_name": "Example Corporation Inc."
+}
+
+country = "USA English"
+
+client_contact = {
+    "name": "John Smith",
+    "phone": "(555) 123-4567",
+    "email": "john.smith@example.com",
+    "adp_contact": "ADP-SUPPORT-01"
+}
+
+program_control = {
+    "test_run": True
+}
+
+overview = {
+    "reference": "T558B&T558C Reference"
+}
+
+ptd_ytd_results = {
+    "country": "USA"
+}
+
+period = {
+    "date_received": "2023-10-15",
+    "date_processed": "2023-10-16"
+}
+
+transaction_overview = {
+    "record_type": "T 558B&T558C",
+    "record_count": 0
+}
+
+# Function to draw text with a given font and color
+def draw_text(text, font, color, x, y, centered=False):
+    text_surface = font.render(text, True, color)
+    if centered:
+        text_rect = text_surface.get_rect(center=(x, y))
+    else:
+        text_rect = text_surface.get_rect(topleft=(x, y))
+    screen.blit(text_surface, text_rect)
+    return text_rect
+
+# Function to draw a box with a title
+def draw_box(title, x, y, width, height, title_color=BLACK):
+    # Draw box background
+    pygame.draw.rect(screen, WHITE, (x, y, width, height))
+    pygame.draw.rect(screen, BLACK, (x, y, width, height), 1)
+    
+    # Draw title background
+    pygame.draw.rect(screen, LIGHT_BLUE, (x, y, width, 30))
+    pygame.draw.rect(screen, BLACK, (x, y, width, 30), 1)
+    
+    # Draw title
+    draw_text(title, heading_font, title_color, x + 10, y + 15)
+
+# Main game loop
+clock = pygame.time.Clock()
+running = True
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+    
+    # Fill the background
+    screen.fill(BACKGROUND)
+    
+    # Draw title
+    draw_text("GlobalView.", title_font, DARK_BLUE, WIDTH // 2, 20, centered=True)
+    
+    # Draw Client Info box
+    draw_box("Client Info", 50, 60, 350, 100)
+    draw_text(f"Client Number: {client_info['client_number']}", normal_font, BLACK, 60, 100)
+    draw_text(f"Company Name: {client_info['company_name']}", normal_font, BLACK, 60, 130)
+    
+    # Draw Country box
+    draw_box("Country", 50, 180, 350, 60)
+    draw_text(f"Country: {country}", normal_font, BLACK, 60, 205)
+    
+    # Draw Client Contact box
+    draw_box("Client Contact", 50, 260, 350, 150)
+    draw_text(f"Name: {client_contact['name']}", normal_font, BLACK, 60, 290)
+    draw_text(f"Phone Number: {client_contact['phone']}", normal_font, BLACK, 60, 320)
+    draw_text(f"E-Mail: {client_contact['email']}", normal_font, BLACK, 60, 350)
+    draw_text(f"ADP Contact: {client_contact['adp_contact']}", normal_font, BLACK, 60, 380)
+    
+    # Draw Program Control box
+    draw_box("Program Control", 50, 430, 350, 60)
+    test_run_status = "Yes" if program_control['test_run'] else "No"
+    draw_text(f"Test Run (No Update): {test_run_status}", normal_font, BLACK, 60, 455)
+    
+    # Draw Overview box
+    draw_box("Overview", 50, 510, 350, 60)
+    draw_text(overview['reference'], normal_font, BLACK, 60, 535)
+    
+    # Draw PTD/YTD Results box
+    draw_box("PTD/YTD Results", 450, 60, 400, 60)
+    draw_text(f"Country: {ptd_ytd_results['country']}", normal_font, BLACK, 460, 85)
+    
+    # Draw Period box
+    draw_box("Period", 450, 140, 400, 80)
+    draw_text(f"Date Received: {period['date_received']}", normal_font, BLACK, 460, 160)
+    draw_text(f"Date Processed: {period['date_processed']}", normal_font, BLACK, 460, 190)
+    
+    # Draw Transaction Overview box
+    draw_box("Transaction Overview", 450, 240, 400, 100)
+    draw_text(f"Record Type: {transaction_overview['record_type']}", normal_font, BLACK, 460, 260)
+    draw_text(f"Record Count: {transaction_overview['record_count']}", normal_font, BLACK, 460, 290)
+    
+    # Draw Total Records box
+    draw_box("Total Records", 450, 360, 400, 60)
+    draw_text(f"Total Records - {transaction_overview['record_count']}", normal_font, RED, 460, 385)
+    
+    # Draw separator line
+    pygame.draw.line(screen, DARK_GRAY, (50, 660), (WIDTH - 50, 660), 2)
+    
+    # Draw footer with current date and time
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    draw_text(f"Dashboard generated on: {current_time}", small_font, DARK_GRAY, WIDTH // 2, 680, centered=True)
+    
+    # Update the display
+    pygame.display.flip()
+    clock.tick(30)
+
+pygame.quit()
+sys.exit()
