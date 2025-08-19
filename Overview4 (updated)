@@ -24,7 +24,7 @@ def build_xlsm():
         sht.range("C3").api.Font.Bold = True
         sht.range("C3").color = header_color
         sht.range("C3").api.Font.Color = 16777215
-        sht.range("C3").api.HorizontalAlignment = -4108  # center
+        sht.range("C3").api.HorizontalAlignment = -4108
         sht.range("C3").api.VerticalAlignment = -4108
         sht.range("C3").api.WrapText = True
 
@@ -34,7 +34,7 @@ def build_xlsm():
         sht.range("L3").api.Font.Bold = True
         sht.range("L3").color = header_color
         sht.range("L3").api.Font.Color = 16777215
-        sht.range("L3").api.HorizontalAlignment = -4152  # right
+        sht.range("L3").api.HorizontalAlignment = -4152
         sht.range("L3").api.VerticalAlignment = -4108
 
         # === LABELS ===
@@ -69,8 +69,9 @@ def build_xlsm():
         for col in "CDEFGHIJK":
             sht.range(f"{col}1").column_width = max_width + 3
 
+        # Whitespace rows
         for r in range(6, 22):
-            sht.range(f"{r}:{r}").row_height = 22
+            sht.range(f"{r}:{r}").row_height = 24
 
         wb.save(OUT_FILE)
         wb.close()
@@ -81,12 +82,12 @@ def build_xlsm():
     wb2 = load_workbook(OUT_FILE, keep_vba=True)
     ws2 = wb2["Overview"]
 
-    thin = Side(style="thin", color="AAAAAA")   # subtle gray borders
+    thin = Side(style="thin", color="CCCCCC")   # light gray borders
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # Section headers
+    # Section headers (soft background + bold dark font)
     section_fill = PatternFill("solid", fgColor="E8F5E9")  # very light green
-    title_font = Font(bold=True, color="1B5E20")           # dark green text
+    title_font = Font(bold=True, size=12, color="1B5E20")  # dark green
 
     for rng in ["C6","H6","C12","H12"]:
         ws2[rng].font = title_font
@@ -96,20 +97,21 @@ def build_xlsm():
 
     # Sub-labels
     for rng in ["C7","C8","C9","C10","H7","H8","H9","H10","C13","C14"]:
-        ws2[rng].font = Font(bold=True, color="37474F")  # dark slate
+        ws2[rng].font = Font(bold=True, size=11, color="37474F")  # dark slate
         ws2[rng].alignment = Alignment(horizontal="left", vertical="center")
 
     # Transaction Overview table headers
+    table_header_fill = PatternFill("solid", fgColor="E3F2FD")
     for rng in ["H13","I13","J13"]:
-        ws2[rng].font = Font(bold=True, color="0D47A1")   # strong blue
-        ws2[rng].fill = PatternFill("solid", fgColor="E3F2FD")
+        ws2[rng].font = Font(bold=True, size=11, color="0D47A1")
+        ws2[rng].fill = table_header_fill
         ws2[rng].border = border
         ws2[rng].alignment = Alignment(horizontal="center", vertical="center")
 
     wb2.save(OUT_FILE)
     wb2.close()
 
-    # --- ADD ACTIVEX CONTROLS (Textboxes, Checkbox, Buttons) ---
+    # --- ADD ACTIVEX CONTROLS ---
     app2 = xw.App(visible=False)
     try:
         book = app2.books.open(OUT_FILE)
@@ -136,7 +138,7 @@ def build_xlsm():
             left, top = cell_left_top(r, c)
             tb = sht.api.OLEObjects().Add(
                 ClassType="Forms.TextBox.1", Link=False, DisplayAsIcon=False,
-                Left=left+2, Top=top+2, Width=w, Height=18
+                Left=left+2, Top=top+2, Width=w, Height=20
             )
             tb.Name = name
 
@@ -144,7 +146,7 @@ def build_xlsm():
         left, top = cell_left_top(22, 3)
         chk = sht.api.OLEObjects().Add(
             ClassType="Forms.CheckBox.1", Link=False, DisplayAsIcon=False,
-            Left=left+2, Top=top+2, Width=200, Height=18
+            Left=left+2, Top=top+2, Width=220, Height=20
         )
         chk.Name = "chkTestRun"
         chk.Object.Caption = "Test Run (No Update)"
@@ -152,8 +154,8 @@ def build_xlsm():
         # Buttons
         left, top = cell_left_top(24, 3)
 
-        # Button 1
-        btn1 = sht.api.Shapes.AddShape(1, left, top, 150, 28)
+        # Button 1 - Green
+        btn1 = sht.api.Shapes.AddShape(1, left, top, 160, 30)
         tf1 = btn1.TextFrame
         tf1.Characters().Text = "Create Upload File"
         btn1.Fill.ForeColor.RGB = 0x2E7D32
@@ -167,8 +169,8 @@ def build_xlsm():
         tf1.HorizontalAlignment = -4108
         btn1.Line.Visible = False
 
-        # Button 2
-        btn2 = sht.api.Shapes.AddShape(1, left + 170, top, 150, 28)
+        # Button 2 - Blue
+        btn2 = sht.api.Shapes.AddShape(1, left + 180, top, 160, 30)
         tf2 = btn2.TextFrame
         tf2.Characters().Text = "Import Upload File"
         btn2.Fill.ForeColor.RGB = 0x1565C0
@@ -187,7 +189,7 @@ def build_xlsm():
     finally:
         app2.quit()
 
-    print("✅ Final Dashboard generated at:", OUT_FILE)
+    print("✅ Enhanced Dashboard generated at:", OUT_FILE)
 
 
 if __name__ == "__main__":
