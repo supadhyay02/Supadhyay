@@ -1,163 +1,227 @@
-import pygame
-import sys
-from datetime import datetime
+import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.utils import get_column_letter
+import xlwings as xw
+import datetime
 
-# Initialize pygame
-pygame.init()
-
-# Screen dimensions
-WIDTH, HEIGHT = 900, 700
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("GlobalView Dashboard")
-
-# Colors
-BACKGROUND = (240, 240, 240)
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-DARK_BLUE = (0, 51, 102)
-LIGHT_BLUE = (173, 216, 230)
-GRAY = (200, 200, 200)
-DARK_GRAY = (100, 100, 100)
-RED = (220, 0, 0)
-GREEN = (0, 150, 0)
-
-# Fonts
-title_font = pygame.font.SysFont("Arial", 28, bold=True)
-heading_font = pygame.font.SysFont("Arial", 20, bold=True)
-normal_font = pygame.font.SysFont("Arial", 16)
-small_font = pygame.font.SysFont("Arial", 14)
-
-# Sample data
-client_info = {
-    "client_number": "CL-2023-001",
-    "company_name": "Example Corporation Inc."
-}
-
-country = "USA English"
-
-client_contact = {
-    "name": "John Smith",
-    "phone": "(555) 123-4567",
-    "email": "john.smith@example.com",
-    "adp_contact": "ADP-SUPPORT-01"
-}
-
-program_control = {
-    "test_run": True
-}
-
-overview = {
-    "reference": "T558B&T558C Reference"
-}
-
-ptd_ytd_results = {
-    "country": "USA"
-}
-
-period = {
-    "date_received": "2023-10-15",
-    "date_processed": "2023-10-16"
-}
-
-transaction_overview = {
-    "record_type": "T 558B&T558C",
-    "record_count": 0
-}
-
-# Function to draw text with a given font and color
-def draw_text(text, font, color, x, y, centered=False):
-    text_surface = font.render(text, True, color)
-    if centered:
-        text_rect = text_surface.get_rect(center=(x, y))
-    else:
-        text_rect = text_surface.get_rect(topleft=(x, y))
-    screen.blit(text_surface, text_rect)
-    return text_rect
-
-# Function to draw a box with a title
-def draw_box(title, x, y, width, height, title_color=BLACK):
-    # Draw box background
-    pygame.draw.rect(screen, WHITE, (x, y, width, height))
-    pygame.draw.rect(screen, BLACK, (x, y, width, height), 1)
+def create_dashboard():
+    # Create a new workbook and select the active worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Dashboard"
     
-    # Draw title background
-    pygame.draw.rect(screen, LIGHT_BLUE, (x, y, width, 30))
-    pygame.draw.rect(screen, BLACK, (x, y, width, 30), 1)
+    # Set column widths to match the original layout
+    column_widths = [2, 25, 20, 15, 15, 15, 15, 15, 15, 15, 15, 15, 2]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = width
     
-    # Draw title
-    draw_text(title, heading_font, title_color, x + 10, y + 15)
+    # Define styles
+    title_font = Font(name='Calibri', size=16, bold=True, color='000000')
+    header_font = Font(name='Calibri', size=11, bold=True, color='000000')
+    normal_font = Font(name='Calibri', size=11, color='000000')
+    bold_font = Font(name='Calibri', size=11, bold=True, color='000000')
+    
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    left_alignment = Alignment(horizontal='left', vertical='center')
+    
+    thin_border = Border(left=Side(style='thin'), 
+                         right=Side(style='thin'), 
+                         top=Side(style='thin'), 
+                         bottom=Side(style='thin'))
+    
+    grey_fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+    light_grey_fill = PatternFill(start_color='F2F2F2', end_color='F2F2F2', fill_type='solid')
+    dark_grey_fill = PatternFill(start_color='A6A6A6', end_color='A6A6A6', fill_type='solid')
+    
+    # GlobalView Title
+    ws.merge_cells('B2:K2')
+    ws['B2'] = 'GlobalView.'
+    ws['B2'].font = title_font
+    ws['B2'].alignment = center_alignment
+    ws['B2'].fill = grey_fill
+    
+    # Client Info Section
+    ws.merge_cells('B4:C4')
+    ws['B4'] = 'Client Info'
+    ws['B4'].font = header_font
+    ws['B4'].fill = dark_grey_fill
+    ws['B4'].border = thin_border
+    
+    ws['B5'] = '- Client Number'
+    ws['B5'].font = normal_font
+    ws['B5'].border = thin_border
+    
+    ws['B6'] = '- Company Name'
+    ws['B6'].font = normal_font
+    ws['B6'].border = thin_border
+    
+    # Country Section
+    ws.merge_cells('E4:F4')
+    ws['E4'] = 'Country'
+    ws['E4'].font = header_font
+    ws['E4'].fill = dark_grey_fill
+    ws['E4'].border = thin_border
+    
+    ws['E5'] = '- USA English'
+    ws['E5'].font = normal_font
+    ws['E5'].border = thin_border
+    
+    # Client Contact Section
+    ws.merge_cells('H4:K4')
+    ws['H4'] = 'Client Contact'
+    ws['H4'].font = header_font
+    ws['H4'].fill = dark_grey_fill
+    ws['H4'].border = thin_border
+    
+    ws['H5'] = '- Name'
+    ws['H5'].font = normal_font
+    ws['H5'].border = thin_border
+    
+    ws['H6'] = '- Phone Number'
+    ws['H6'].font = normal_font
+    ws['H6'].border = thin_border
+    
+    ws['H7'] = '- E-Mail'
+    ws['H7'].font = normal_font
+    ws['H7'].border = thin_border
+    
+    ws['H8'] = '- ADP Contact'
+    ws['H8'].font = normal_font
+    ws['H8'].border = thin_border
+    
+    # Program Control Section
+    ws.merge_cells('B9:C9')
+    ws['B9'] = 'Program Control'
+    ws['B9'].font = header_font
+    ws['B9'].fill = dark_grey_fill
+    ws['B9'].border = thin_border
+    
+    ws['B10'] = '- Test Run (No Update)'
+    ws['B10'].font = normal_font
+    ws['B10'].border = thin_border
+    
+    # Overview Section
+    ws.merge_cells('E9:F9')
+    ws['E9'] = 'Overview'
+    ws['E9'].font = header_font
+    ws['E9'].fill = dark_grey_fill
+    ws['E9'].border = thin_border
+    
+    ws['E10'] = '- T558B&T558C Reference'
+    ws['E10'].font = normal_font
+    ws['E10'].border = thin_border
+    
+    # Separator line
+    for col in range(2, 12):
+        ws.cell(row=11, column=col).fill = grey_fill
+    
+    # PTD/YTD Results Section
+    ws.merge_cells('B12:K12')
+    ws['B12'] = 'PTD/YTD Results'
+    ws['B12'].font = header_font
+    ws['B12'].alignment = center_alignment
+    ws['B12'].fill = dark_grey_fill
+    
+    ws['B13'] = 'USA'
+    ws['B13'].font = bold_font
+    ws['B13'].alignment = center_alignment
+    
+    # Period Section
+    ws.merge_cells('B15:C15')
+    ws['B15'] = 'Period'
+    ws['B15'].font = header_font
+    ws['B15'].fill = dark_grey_fill
+    ws['B15'].border = thin_border
+    
+    ws['B16'] = '- Date Received'
+    ws['B16'].font = normal_font
+    ws['B16'].border = thin_border
+    
+    ws['B17'] = '- Date Processed'
+    ws['B17'].font = normal_font
+    ws['B17'].border = thin_border
+    
+    # Transaction Overview Section
+    ws.merge_cells('E15:F15')
+    ws['E15'] = 'Transaction Overview'
+    ws['E15'].font = header_font
+    ws['E15'].fill = dark_grey_fill
+    ws['E15'].border = thin_border
+    
+    ws['E16'] = '- Record Type'
+    ws['E16'].font = normal_font
+    ws['E16'].border = thin_border
+    
+    ws['E17'] = '- Record Count'
+    ws['E17'].font = normal_font
+    ws['E17'].border = thin_border
+    
+    # T 558B&T558C Section
+    ws.merge_cells('H15:K15')
+    ws['H15'] = 'T 558B&T558C 0'
+    ws['H15'].font = header_font
+    ws['H15'].fill = dark_grey_fill
+    ws['H15'].border = thin_border
+    ws['H15'].alignment = center_alignment
+    
+    # Total Records Section
+    ws.merge_cells('B19:K19')
+    ws['B19'] = 'Total Records - 0'
+    ws['B19'].font = header_font
+    ws['B19'].alignment = center_alignment
+    ws['B19'].fill = grey_fill
+    
+    # Add current date and time
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ws.merge_cells('B21:K21')
+    ws['B21'] = f'Generated on: {current_time}'
+    ws['B21'].font = Font(name='Calibri', size=9, italic=True, color='666666')
+    ws['B21'].alignment = center_alignment
+    
+    # Save the workbook
+    filename = "GlobalView_Dashboard.xlsx"
+    wb.save(filename)
+    
+    # Make it interactive with xlwings
+    make_interactive(filename)
+    
+    return filename
 
-# Main game loop
-clock = pygame.time.Clock()
-running = True
+def make_interactive(filename):
+    # Connect to the Excel file using xlwings
+    app = xw.App(visible=False)
+    wb = xw.Book(filename)
+    sht = wb.sheets['Dashboard']
+    
+    # Add a button to refresh data (example functionality)
+    sht.api.OLEObjects().Add(ClassType="Forms.CommandButton.1", 
+                            Left=sht.range('B23').left, 
+                            Top=sht.range('B23').top, 
+                            Width=100, 
+                            Height=20).Name = "RefreshButton"
+    
+    button = sht.api.OLEObjects("RefreshButton")
+    button.Object.Caption = "Refresh Data"
+    button.Object.Font.Size = 10
+    
+    # Add sample data validation (example)
+    sht.range('B5').value = "- Client Number"
+    sht.range('C5').value = "12345"  # Sample data
+    
+    sht.range('B6').value = "- Company Name"
+    sht.range('C6').value = "Example Corp"  # Sample data
+    
+    # Add formulas to calculate record count
+    sht.range('H17').value = "=COUNTA(B5:K20)"  # Example formula
+    
+    # Auto-adjust row heights
+    sht.autofit()
+    
+    # Save and close
+    wb.save()
+    wb.close()
+    app.quit()
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
-    
-    # Fill the background
-    screen.fill(BACKGROUND)
-    
-    # Draw title
-    draw_text("GlobalView.", title_font, DARK_BLUE, WIDTH // 2, 20, centered=True)
-    
-    # Draw Client Info box
-    draw_box("Client Info", 50, 60, 350, 100)
-    draw_text(f"Client Number: {client_info['client_number']}", normal_font, BLACK, 60, 100)
-    draw_text(f"Company Name: {client_info['company_name']}", normal_font, BLACK, 60, 130)
-    
-    # Draw Country box
-    draw_box("Country", 50, 180, 350, 60)
-    draw_text(f"Country: {country}", normal_font, BLACK, 60, 205)
-    
-    # Draw Client Contact box
-    draw_box("Client Contact", 50, 260, 350, 150)
-    draw_text(f"Name: {client_contact['name']}", normal_font, BLACK, 60, 290)
-    draw_text(f"Phone Number: {client_contact['phone']}", normal_font, BLACK, 60, 320)
-    draw_text(f"E-Mail: {client_contact['email']}", normal_font, BLACK, 60, 350)
-    draw_text(f"ADP Contact: {client_contact['adp_contact']}", normal_font, BLACK, 60, 380)
-    
-    # Draw Program Control box
-    draw_box("Program Control", 50, 430, 350, 60)
-    test_run_status = "Yes" if program_control['test_run'] else "No"
-    draw_text(f"Test Run (No Update): {test_run_status}", normal_font, BLACK, 60, 455)
-    
-    # Draw Overview box
-    draw_box("Overview", 50, 510, 350, 60)
-    draw_text(overview['reference'], normal_font, BLACK, 60, 535)
-    
-    # Draw PTD/YTD Results box
-    draw_box("PTD/YTD Results", 450, 60, 400, 60)
-    draw_text(f"Country: {ptd_ytd_results['country']}", normal_font, BLACK, 460, 85)
-    
-    # Draw Period box
-    draw_box("Period", 450, 140, 400, 80)
-    draw_text(f"Date Received: {period['date_received']}", normal_font, BLACK, 460, 160)
-    draw_text(f"Date Processed: {period['date_processed']}", normal_font, BLACK, 460, 190)
-    
-    # Draw Transaction Overview box
-    draw_box("Transaction Overview", 450, 240, 400, 100)
-    draw_text(f"Record Type: {transaction_overview['record_type']}", normal_font, BLACK, 460, 260)
-    draw_text(f"Record Count: {transaction_overview['record_count']}", normal_font, BLACK, 460, 290)
-    
-    # Draw Total Records box
-    draw_box("Total Records", 450, 360, 400, 60)
-    draw_text(f"Total Records - {transaction_overview['record_count']}", normal_font, RED, 460, 385)
-    
-    # Draw separator line
-    pygame.draw.line(screen, DARK_GRAY, (50, 660), (WIDTH - 50, 660), 2)
-    
-    # Draw footer with current date and time
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    draw_text(f"Dashboard generated on: {current_time}", small_font, DARK_GRAY, WIDTH // 2, 680, centered=True)
-    
-    # Update the display
-    pygame.display.flip()
-    clock.tick(30)
-
-pygame.quit()
-sys.exit()
+if __name__ == "__main__":
+    filename = create_dashboard()
+    print(f"Dashboard created successfully: {filename}")
