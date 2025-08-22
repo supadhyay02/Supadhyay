@@ -1,0 +1,99 @@
+import xlwings as xw
+from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
+
+def build_xlsm(ws2, sht):
+    # ==== Step 1: Border styling ====
+    thin = Side(border_style="thin", color="000000")
+    thick = Side(border_style="thick", color="000000")
+    thin_border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
+    # Apply thin borders to whole sheet
+    max_row = ws2.max_row
+    max_col = ws2.max_column
+    for r in range(1, max_row + 1):
+        for c in range(1, max_col + 1):
+            ws2.cell(row=r, column=c).border = thin_border
+
+    # Helper function for thick box
+    def add_thick_box(ws, start_row, end_row, start_col, end_col):
+        for r in range(start_row, end_row + 1):
+            for c in range(start_col, end_col + 1):
+                cell = ws.cell(row=r, column=c)
+                top    = thick if r == start_row else thin
+                bottom = thick if r == end_row else thin
+                left   = thick if c == start_col else thin
+                right  = thick if c == end_col else thin
+                cell.border = Border(top=top, bottom=bottom, left=left, right=right)
+
+    # Apply thick boxes to sections
+    add_thick_box(ws2, 2, 6, 2, 5)   # Client Information
+    add_thick_box(ws2, 2, 7, 6, 8)   # Contact Details
+    add_thick_box(ws2, 12, 15, 2, 7) # Transaction Overview
+
+    # ==== Step 2: Visual header styling ====
+    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    header_font = Font(bold=True, color="000000")
+    center = Alignment(horizontal="center", vertical="center")
+
+    headers = [(2,2,"Client Information"),
+               (2,6,"Contact Details"),
+               (12,2,"Transaction Overview")]
+
+    for row,col,text in headers:
+        cell = ws2.cell(row=row, column=col)
+        cell.value = text
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+
+    # ==== Step 3: Add TextBoxes for user input ====
+    # Delete old shapes if rerun
+    for shp in sht.api.Shapes:
+        if shp.Name.startswith("InputBox"):
+            shp.Delete()
+
+    # Add input textboxes (example: client number, company name, etc.)
+    sht.api.OLEObjects().Add(
+        ClassType="Forms.TextBox.1",
+        Left=sht.range("E3").left,
+        Top=sht.range("E3").top,
+        Width=120,
+        Height=18
+    ).Name = "InputBox_ClientNumber"
+
+    sht.api.OLEObjects().Add(
+        ClassType="Forms.TextBox.1",
+        Left=sht.range("E4").left,
+        Top=sht.range("E4").top,
+        Width=180,
+        Height=18
+    ).Name = "InputBox_CompanyName"
+
+    sht.api.OLEObjects().Add(
+        ClassType="Forms.TextBox.1",
+        Left=sht.range("H3").left,
+        Top=sht.range("H3").top,
+        Width=120,
+        Height=18
+    ).Name = "InputBox_Phone"
+
+    sht.api.OLEObjects().Add(
+        ClassType="Forms.TextBox.1",
+        Left=sht.range("H4").left,
+        Top=sht.range("H4").top,
+        Width=180,
+        Height=18
+    ).Name = "InputBox_Email"
+
+    # ==== Step 4: Lock sheet ====
+    # Lock all cells
+    sht.cells.api.Locked = True  
+
+    # Protect sheet so only textboxes are editable
+    sht.api.Protect(
+        Password="adpprotect",
+        DrawingObjects=False,   # allows textbox input
+        Contents=True,
+        Scenarios=True,
+        UserInterfaceOnly=True  # backend can still write
+    )
