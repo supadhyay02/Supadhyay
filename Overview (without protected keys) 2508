@@ -83,7 +83,7 @@ def build_xlsm():
         for i, w in enumerate(widths, start=1):
             sht.api.Columns(i).ColumnWidth = w
 
-        app.api.ActiveWindow.DisplayGridlines = False
+        app.api.ActiveWindow.DisplayGridlines = True
         app.api.ActiveWindow.DisplayHeadings = False
 
         # Title
