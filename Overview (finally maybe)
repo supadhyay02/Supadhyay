@@ -5,112 +5,277 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 
-# === Output File Path ===
-OUT_FILE = os.path.abspath("ADP_Interactive_Dashboard_Merged.xlsm")
+OUT_FILE = os.path.abspath("ADP_Interactive_Dashboard.xlsx")
 
 def build_xlsm():
-    # === Remove old file if exists ===
     if os.path.exists(OUT_FILE):
         try:
             os.remove(OUT_FILE)
         except Exception as e:
-            print("Error removing file:", e)
+            print("Could not remove existing file:", e)
             return
 
-    # === Create Excel with xlwings (for ActiveX) ===
     app = xw.App(visible=False)
-    wb = app.books.add()
+    try:
+        wb = app.books.add()
 
-    # Remove extra default sheets
-    for sh in wb.sheets:
-        if sh.name not in ["Sheet1"]:
-            sh.delete()
+        # Overview sheet
+        sht = wb.sheets[0]
+        sht.name = "Overview"
 
-    # Rename Sheet1 -> Overview
-    overview = wb.sheets["Sheet1"]
-    overview.name = "Overview"
+        # TransactionData sheet creation (with sample data)
+        try:
+            data_sht = wb.sheets("TransactionData")
+            print("TransactionData sheet already exists, will use existing data")
+        except:
+            print("Creating TransactionData sheet with sample data")
+            data_sht = wb.sheets.add("TransactionData")
+            data_sht.visible = False
 
-    # Add TransactionData sheet
-    trans_sheet = wb.sheets.add("TransactionData", after="Overview")
+            transactions_data = [
+                ["Record Type", "Record Count"],
+                ["Payroll", 120],
+                ["Benefits", 85],
+                ["Expenses", 45],
+                ["Leave", 62],
+                ["Training", 30],
+                ["Travel", 18],
+                ["Compliance", 12],
+                ["Recruitment", 25],
+                ["Onboarding", 38],
+                ["Terminations", 15],
+                ["Performance", 22],
+                ["Compensation", 28]
+            ]
 
-    # Save as xlsm
-    wb.save(OUT_FILE)
-    wb.close()
-    app.quit()
-    time.sleep(1)
+            for i, row in enumerate(transactions_data, start=1):
+                for j, value in enumerate(row, start=1):
+                    data_sht.range(i, j).value = value
 
-    # === Open again with openpyxl for styling + validation ===
-    wb = load_workbook(OUT_FILE, keep_vba=True)
+        # Layout (columns + rows)
+        widths = [3, 20, 30, 3, 20, 20, 15, 15]
+        for i, w in enumerate(widths, start=1):
+            sht.api.Columns(i).ColumnWidth = w
 
-    # === Styling & Validation for Overview sheet ===
-    ws = wb["Overview"]
+        row_heights = {
+            2: 30, 3: 30,
+            5: 25, 6: 22, 7: 22, 8: 22, 9: 22,
+            11: 25, 12: 22, 13: 22, 14: 22,
+            15: 25, 17: 120
+        }
+        for row, height in row_heights.items():
+            sht.api.Rows(row).RowHeight = height
 
-    # Example Header row formatting
-    headers = ["Col", "Field name", "Description", "Reqd.", "Data type", "Length", "Decimals"]
-    ws.append(headers)
+        app.api.ActiveWindow.DisplayGridlines = False
+        app.api.ActiveWindow.DisplayHeadings = False
 
-    header_fill = PatternFill(start_color="B7DEE8", end_color="B7DEE8", fill_type="solid")
-    header_font = Font(bold=True, color="000000")
-    alignment = Alignment(horizontal="center", vertical="center")
+        # Title
+        header_color = (59, 89, 152)
+        sht.range("B2:G3").merge()
+        sht.range("B2").value = "ADP - PTD/YTD Results - USA"
+        sht.range("B2").api.Font.Size = 20
+        sht.range("B2").api.Font.Bold = True
+        sht.range("B2").color = header_color
+        sht.range("B2").api.Font.Color = 0xFFFFFF
+        sht.range("B2").api.HorizontalAlignment = -4108
+        sht.range("B2").api.VerticalAlignment = -4108
 
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = alignment
+        # Client Info
+        client_info_color = (234, 242, 255)
+        sht.range("B5:C9").color = client_info_color
+        sht.range("B5:C5").merge(); sht.range("B5").value = "👤 Client Information"
+        sht.range("B5").api.Font.Size = 12
+        sht.range("B5").api.Font.Bold = True
+        sht.range("B5").api.Font.Color = 0x2F5496
 
-    # Example data validation rules
-    dv_required = DataValidation(type="list", formula1='"Yes,No"', allow_blank=False)
-    dv_email = DataValidation(type="custom", formula1='ISNUMBER(SEARCH("@",A2))', allow_blank=True)
-    dv_date = DataValidation(type="date", operator="between", formula1="DATE(2000,1,1)", formula2="DATE(2100,12,31)")
+        labels = ["Client Number:", "Company Name:", "Country:", "Language:"]
+        values = ["", "", "USA", "English"]
+        for i, (label, value) in enumerate(zip(labels, values), start=6):
+            sht.range(f"B{i}").value = label
+            sht.range(f"B{i}").api.Font.Bold = True
+            sht.range(f"C{i}").value = value
 
-    ws.add_data_validation(dv_required)
-    ws.add_data_validation(dv_email)
-    ws.add_data_validation(dv_date)
+        # Contact
+        sht.range("E5:G9").color = client_info_color
+        sht.range("E5:G5").merge(); sht.range("E5").value = "📞 Contact Details"
+        sht.range("E5").api.Font.Size = 12
+        sht.range("E5").api.Font.Bold = True
+        sht.range("E5").api.Font.Color = 0x2F5496
 
-    dv_required.add(ws["D2"])  # Reqd.
-    dv_email.add(ws["C2"])     # Description/email field example
-    dv_date.add(ws["B2"])      # Field name/date example
+        contact_labels = ["Name:", "Phone Number:", "Email:", "ADP Contact:"]
+        for i, label in enumerate(contact_labels, start=6):
+            sht.range(f"E{i}").value = label
+            sht.range(f"E{i}").api.Font.Bold = True
+            sht.range(f"F{i}").value = ""
+            sht.range(f"F{i}:G{i}").merge()
 
-    # === TransactionData sheet formatting ===
-    ws2 = wb["TransactionData"]
+        # Period
+        sht.range("B11:C13").color = client_info_color
+        sht.range("B11:C11").merge(); sht.range("B11").value = "🗓️ Period"
+        sht.range("B11").api.Font.Size = 12
+        sht.range("B11").api.Font.Bold = True
+        sht.range("B11").api.Font.Color = 0x2F5496
 
-    # Add a table header
-    trans_headers = ["TransactionID", "User", "Amount", "Date"]
-    ws2.append(trans_headers)
-    for col, header in enumerate(trans_headers, 1):
-        cell = ws2.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = alignment
+        sht.range("B12").value = "Date Received:"; sht.range("C12").value = ""
+        sht.range("B13").value = "Date Processed:"; sht.range("C13").value = ""
 
-    # Example rows
-    ws2.append([1, "User1", 100, "2025-01-01"])
-    ws2.append([2, "User2", 250, "2025-01-02"])
+        # Total Records placeholder
+        sht.range("B15:C15").merge()
+        sht.range("B15").value = "Total Records: Calculating..."
+        sht.range("B15").api.Font.Bold = True
 
-    # Record total at bottom
-    total_row = ws2.max_row + 2
-    ws2.cell(row=total_row, column=2, value="Total")
-    ws2.cell(row=total_row, column=3, value=f"=SUM(C2:C{ws2.max_row})")
+        # Transaction Overview
+        sht.range("E11:G17").color = client_info_color
+        sht.range("E11:G11").merge(); sht.range("E11").value = "🧾 Transaction Overview"
+        sht.range("E11").api.Font.Size = 12
+        sht.range("E11").api.Font.Bold = True
+        sht.range("E11").api.Font.Color = 0x2F5496
 
-    # Borders for TransactionData
-    thin = Side(border_style="thin", color="000000")
-    border = Border(top=thin, left=thin, right=thin, bottom=thin)
+        wb.save(OUT_FILE)
+        wb.close()
+    finally:
+        app.quit()
 
-    for row in ws2.iter_rows(min_row=1, max_row=ws2.max_row, min_col=1, max_col=4):
+    time.sleep(0.5)
+
+    # ---- Styling, Protection, Data Validation (openpyxl) ----
+    wb2 = load_workbook(OUT_FILE)
+    ws = wb2["Overview"]
+
+    border = Border(left=Side(style='medium'), right=Side(style='medium'),
+                    top=Side(style='medium'), bottom=Side(style='medium'))
+    blue_fill = PatternFill("solid", fgColor="2F5496")
+
+    ws.merge_cells("B2:G3")
+    title = ws["B2"]
+    title.font = Font(size=20, bold=True, color="FFFFFF")
+    title.fill = blue_fill
+    title.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Lock all cells first
+    for row in ws.iter_rows():
         for cell in row:
-            cell.border = border
+            cell.protection = cell.protection.copy(locked=True)
 
-    # === Protect Sheets ===
-    ws.protection.set_password("123")
-    ws2.protection.set_password("123")
+    # Unlock input cells
+    editable_cells = ["C6", "C7", "C12", "C13", "F6", "F7", "F8", "F9"]
+    for cell_ref in editable_cells:
+        ws[cell_ref].protection = ws[cell_ref].protection.copy(locked=False)
 
-    # === Workbook Structure Protection ===
-    wb.security.workbookPassword = "123"
-    wb.security.lockStructure = True
+    # Data validations
+    dv_text = DataValidation(type="custom", formula1='LEN(TRIM(C6))>0', showErrorMessage=True)
+    dv_text.error = "Client Number cannot be empty."
+    ws.add_data_validation(dv_text)
+    dv_text.add(ws["C6"])
 
-    wb.save(OUT_FILE)
-    wb.close()
+    dv_email = DataValidation(type="custom",
+                              formula1='AND(ISNUMBER(SEARCH("@",F8)),ISNUMBER(SEARCH(".",F8)))',
+                              showErrorMessage=True)
+    dv_email.error = "Enter a valid email (e.g., xyz@abc.com)."
+    ws.add_data_validation(dv_email)
+    dv_email.add(ws["F8"])
+
+    dv_date1 = DataValidation(type="date", operator="between", formula1="DATE(2000,1,1)", formula2="DATE(2100,12,31)")
+    dv_date1.error = "Enter a valid date (dd/mm/yyyy)."
+    ws.add_data_validation(dv_date1)
+    dv_date1.add(ws["C12"])
+
+    dv_date2 = DataValidation(type="date", operator="between", formula1="DATE(2000,1,1)", formula2="DATE(2100,12,31)")
+    dv_date2.error = "Enter a valid date (dd/mm/yyyy)."
+    ws.add_data_validation(dv_date2)
+    dv_date2.add(ws["C13"])
+
+    ws.protection.sheet = True
+    ws.protection.password = "adp123"
+    ws.protection.enable()
+
+    # Unlock TransactionData sheet content
+    if "TransactionData" in wb2.sheetnames:
+        ws_data = wb2["TransactionData"]
+        for row in ws_data.iter_rows():
+            for cell in row:
+                cell.protection = cell.protection.copy(locked=False)
+
+    wb2.save(OUT_FILE)
+    wb2.close()
+
+    # ---- Final ActiveX ListBox + Totals ----
+    app3 = xw.App(visible=True)
+    try:
+        book = app3.books.open(OUT_FILE)
+        sht = book.sheets["Overview"]
+
+        try:
+            data_sht = book.sheets["TransactionData"]
+            data_exists = True
+        except:
+            data_exists = False
+
+        sht.api.Unprotect("adp123")
+        sht.range("E12:G100").clear()
+
+        transactions = []
+        total_records = 0
+
+        if data_exists:
+            data_range = data_sht.range("A2:B100")
+            data_values = data_range.value
+
+            if data_values:
+                if isinstance(data_values[0], list):
+                    for row in data_values:
+                        if row and row[0] and row[1] is not None:
+                            transactions.append((row[0], row[1]))
+                            if isinstance(row[1], (int, float)):
+                                total_records += row[1]
+                else:
+                    if data_values[0] and data_values[1] is not None:
+                        transactions.append((data_values[0], data_values[1]))
+                        if isinstance(data_values[1], (int, float)):
+                            total_records += data_values[1]
+
+        if not transactions:
+            fallback_data = [("Payroll", 120), ("Benefits", 85), ("Expenses", 45)]
+            transactions = fallback_data
+            total_records = sum(rec[1] for rec in fallback_data)
+
+        try:
+            listbox_cell = sht.range("E12")
+            left = listbox_cell.left
+            top = listbox_cell.top
+            width = sht.range("E11:G11").width - 5
+            height = 100
+
+            listbox = sht.api.OLEObjects().Add(ClassType="Forms.ListBox.1",
+                                              Left=left,
+                                              Top=top,
+                                              Width=width,
+                                              Height=height)
+            listbox.Name = "lstTransactions"
+            listbox.Object.ColumnCount = 2
+            listbox.Object.ColumnWidths = "200;80"
+            data = [["Record Type", "Record Count"]] + transactions
+            listbox.Object.List = data
+
+        except Exception as e:
+            for i, (rec_type, count) in enumerate(transactions, start=12):
+                sht.range(f"E{i}").value = rec_type
+                sht.range(f"F{i}").value = count
+
+        sht.range("B15").value = f"Total Records: {total_records}"
+
+        sht.api.Protect("adp123", DrawingObjects=True, Contents=True, Scenarios=True, UserInterfaceOnly=True)
+        book.api.Protect("adp123", Structure=True)
+
+        book.save(OUT_FILE)
+        book.close()
+    finally:
+        app3.quit()
+
+    print("✅ ADP_Interactive_Dashboard.xlsx created at:", OUT_FILE)
+
+if __name__ == "__main__":
+    build_xlsm()
     print("✅ Workbook created successfully at:", OUT_FILE)
 
 
