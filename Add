@@ -1,40 +1,27 @@
-# Count rows starting from row 4 where any cell has data
-sht.range(f"F{row}").formula = (
-    f"=SUMPRODUCT(--(MMULT(--(LEN('{safe_sheet_name}'!4:1000)<>0),"
-    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>0))"
-)
-
-sht.range(f"F{row}").api.Font.Bold = True
-sht.range(f"F{row}").api.Font.Color = 0x2F5496
-sht.range(f"F{row}").api.HorizontalAlignment = -4108
-
-
-
-
-
-sht.range(f"F{row}").formula = (
-    f"=SUMPRODUCT(--(MMULT(--(LEN('{safe_sheet_name}'!A4:Z1000)<>0),"
-    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!A4:Z4)^0))>0))"
-)
-
-
-
-
-sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!4:1048576)>0),TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>
-
-
-
-# --- Find last used row and column ---
+# --- Find last row and last column ---
 last_row = sht.api.UsedRange.Rows.Count
 last_col = sht.api.UsedRange.Columns.Count
 
-# --- Helper to convert column number to Excel letter ---
+# Convert column number → Excel letter
 def col_letter(n):
     result = ""
     while n:
         n, r = divmod(n-1, 26)
         result = chr(65+r) + result
     return result
+
+last_col_letter = col_letter(last_col)
+
+# Data range: from row 4 down to last_row
+data_range = f"A4:{last_col_letter}{last_row}"
+# Header row (row 4 only) for COLUMN() reference
+header_range = f"A4:{last_col_letter}4"
+
+# Formula: count non-empty rows between 4 and last_row
+sht.range(f"F{row}").formula = (
+    f"=SUMPRODUCT(--(MMULT(--(LEN('{safe_sheet_name}'!{data_range})>0),"
+    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!{header_range})^0))>0))"
+)    return result
 
 last_col_letter = col_letter(last_col)
 
