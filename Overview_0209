@@ -224,18 +224,14 @@ def create_dashboard():
                 last_row = used_range.Rows.Count
                 last_col = used_range.Columns.Count
 
-                for r in range(1, last_row + 1):
+                for r in range(4, last_row + 1):
                     row_has_value = False
-                    row_is_header = False
                     for c in range(1, last_col + 1):
                         cell = data_sheet.api.Cells(r, c)
                         if cell.Value is not None and str(cell.Value).strip() != "":
                             row_has_value = True
-                        # detect green header cells
-                        rgb = cell.Interior.Color
-                        if rgb in [5296274, 5287936, 65280]:  # common green shades
-                            row_is_header = True
-                    if row_has_value and not row_is_header:
+                            break  # one filled cell is enough
+                    if row_has_value:
                         record_count += 1
             except:
                 record_count = 0
