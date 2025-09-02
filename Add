@@ -21,3 +21,7 @@ sht.range(f"F{row}").formula = (
 
 
 sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!4:1048576)>0),TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>0))"
+
+
+
+sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(COUNTA('{safe_sheet_name}'!4:1048576)>0))"
