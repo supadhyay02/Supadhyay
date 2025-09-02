@@ -20,26 +20,29 @@ sht.range(f"F{row}").formula = (
 
 
 
-sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!4:1048576)>0),TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>0))"
+sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!4:1048576)>0),TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>
 
 
 
-sht.range(f"F{row}").formula = f"=SUMPRODUCT(--(COUNTA('{safe_sheet_name}'!4:1048576)>0))"
-
-
-
-# get last used row and column of the sheet
+# --- Find last used row and column ---
 last_row = sht.api.UsedRange.Rows.Count
 last_col = sht.api.UsedRange.Columns.Count
 
-# build an Excel column letter (e.g. A, B, AA)
-import openpyxl.utils as xlutils
-last_col_letter = xlutils.get_column_letter(last_col)
+# --- Helper to convert column number to Excel letter ---
+def col_letter(n):
+    result = ""
+    while n:
+        n, r = divmod(n-1, 26)
+        result = chr(65+r) + result
+    return result
 
-# formula: count rows (from 4 down to last_row) that have at least one non-empty cell
-formula = (
-    f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!4:{last_col_letter}{last_row})>0),"
-    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>0))"
+last_col_letter = col_letter(last_col)
+
+# --- Build the range from row 4 down to last row ---
+data_range = f"A4:{last_col_letter}{last_row}"
+
+# --- Formula: count non-empty rows across full range ---
+sht.range(f"F{row}").formula = (
+    f"=SUMPRODUCT(--(MMULT(N(LEN('{safe_sheet_name}'!{data_range})>0),"
+    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!A:{last_col_letter})^0))>0))"
 )
-
-sht.range(f"F{row}").formula = formula
