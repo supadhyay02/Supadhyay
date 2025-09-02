@@ -1,0 +1,9 @@
+# Count rows starting from row 4 where any cell has data
+sht.range(f"F{row}").formula = (
+    f"=SUMPRODUCT(--(MMULT(--(LEN('{safe_sheet_name}'!4:1000)<>0),"
+    f"TRANSPOSE(COLUMN('{safe_sheet_name}'!4:4)^0))>0))"
+)
+
+sht.range(f"F{row}").api.Font.Bold = True
+sht.range(f"F{row}").api.Font.Color = 0x2F5496
+sht.range(f"F{row}").api.HorizontalAlignment = -4108
