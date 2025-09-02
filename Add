@@ -1,4 +1,3 @@
 sht.range(f"F{row}").formula = (
-    f"=SUMPRODUCT(--(MMULT(--(LEN('{safe_sheet_name}'!A4:XFD1000)<>0),"
-    f"ROW('{safe_sheet_name}'!A4:XFD4)^0)>0))"
+    f"=SUM(--(BYROW('{safe_sheet_name}'!A4:XFD1000,LAMBDA(r,SUMPRODUCT(--(LEN(r)<>0))>0))))"
 )
